@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.angular.model.Product;
 import com.angular.model.ProductResponse;
 import com.angular.repositories.ProductRepository;
+import com.google.gson.Gson;
 
 @CrossOrigin
 @RestController
@@ -104,5 +106,47 @@ public class ProductController {
 		}
 		
 		return new ResponseEntity<>(productResponse,HttpStatus.OK);
+	}
+	
+	@GetMapping("/products/{id}")
+	public ResponseEntity<?> listProductById(@PathVariable Integer id) {
+		ProductResponse productResponse=new ProductResponse();
+	
+		System.out.println("Id a buscar: " + id);
+		
+		Optional<Product> productById=productRepository.findById(id);
+		
+		if(productById.isPresent()) {
+			productResponse.setCode("00");
+			productResponse.setData(new Gson().toJson(productById.get()));		
+		} else {
+			System.out.println("No existe el producto con id " + id);
+			productResponse.setCode("99");
+			productResponse.setData("Error al encontrar producto: id " +  id + " no existe");
+		}
+		
+		return new ResponseEntity<>(productResponse,HttpStatus.OK);
+	}
+	
+	@PutMapping("/products")
+	public ResponseEntity<?> updateProduct(@RequestBody Product productBody) {
+		ProductResponse productResponse=new ProductResponse();
+		
+		if(productBody.getId()==0) {
+			System.out.println("Error al actualizar producto con id " + productBody.getId());
+			productResponse.setCode("99");
+			productResponse.setData("Error al actualizar producto con id " + productBody.getId());
+		} else {
+			if(productRepository.save(productBody)!=null) {
+				productResponse.setCode("00");
+				productResponse.setData("Actualización de producto con id " + productBody.getId() + " exitosa");		
+			} else {
+				System.out.println("Error al actualizar producto con id " + productBody.getId());
+				productResponse.setCode("99");
+				productResponse.setData("Error al actualizar producto con id " + productBody.getId());
+			}
+		}
+		
+		return new ResponseEntity<>(productResponse,HttpStatus.OK);	
 	}
 }
